@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Daily Routine Tracker{% endblock %}</title>
+  <meta name="description" content="Personalized Daily Routine Tracker – track habits, build discipline, and gain behavioral insights." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% if session.loggedin %}
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="{{ url_for('dashboard') }}" class="site-brand">
+        <span class="brand-name">{{ session.username }} Routine</span>
+      </a>
+      <nav class="header-nav">
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Today</a>
+        <a href="{{ url_for('history') }}"   class="nav-link {% if request.endpoint == 'history'   %}active{% endif %}">History</a>
+        <a href="{{ url_for('insights') }}"  class="nav-link {% if request.endpoint == 'insights'  %}active{% endif %}">Insights</a>
+        <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="{% if not session.loggedin %}auth-page{% endif %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if session.loggedin %}
+  <footer class="site-footer">
+    <p>Built with consistency 💪 &nbsp;|&nbsp; {{ session.username }} Routine Tracker</p>
+  </footer>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}History – {{ username }} Routine{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <section class="page-hero page-hero--sm">
+    <div class="hero-content">
+      <h1 class="page-title">Performance History</h1>
+      <p class="page-subtitle">Your last 30 days of progress</p>
+    </div>
+  </section>
+
+  {% if logs %}
+  <!-- ── Summary Cards ──────────────────────────────────────── -->
+  <section class="stats-row">
+    {% set total_days = logs | length %}
+    {% set avg_pct = (logs | sum(attribute='discipline_score') / total_days / logs[0].total_points * 100) | round(1) %}
+    {% set best = logs | max(attribute='discipline_score') %}
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val">{{ total_days }}</div>
+      <div class="stat-key">Days Tracked</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-val">{{ avg_pct }}%</div>
+      <div class="stat-key">Average Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-val">{{ best.discipline_score }} pts</div>
+      <div class="stat-key">Best Day</div>
+    </div>
+  </section>
+
+  <!-- ── History Table ──────────────────────────────────────── -->
+  <section class="table-section">
+    <div class="table-wrapper">
+      <table class="history-table" id="historyTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Tasks Completed</th>
+            <th>Score</th>
+            <th>Completion</th>
+            <th>Rating</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr class="history-row" data-pct="{{ log.percentage }}">
+            <td class="td-date">
+              <span class="date-day">{{ log.log_date.strftime('%d %b') }}</span>
+              <span class="date-year">{{ log.log_date.strftime('%Y') }}</span>
+            </td>
+            <td class="td-tasks">
+              <span class="tasks-done">{{ log.tasks_completed }}</span>
+              <span class="tasks-total">/ {{ log.total_tasks }}</span>
+            </td>
+            <td class="td-score">
+              <span class="score-val">{{ log.discipline_score }}</span>
+              <span class="score-max">/ {{ log.total_points }}</span>
+            </td>
+            <td class="td-pct">
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" style="width: {{ log.percentage }}%"></div>
+              </div>
+              <span class="pct-num">{{ log.percentage }}%</span>
+            </td>
+            <td class="td-badge">
+              <span class="badge {{ log.badge[1] }}">{{ log.badge[0] }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% else %}
+  <section class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h2>No history yet</h2>
+    <p>Complete and save your first day to start seeing your progress here.</p>
+    <a href="{{ url_for('dashboard') }}" class="btn-primary">Start Today</a>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

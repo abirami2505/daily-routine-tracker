@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block title %}Today – {{ username }} Routine{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <!-- ── Page Header ─────────────────────────────────────────── -->
+  <section class="page-hero">
+    <div class="hero-content">
+      <h1 class="page-title">{{ username }}'s Daily Routine</h1>
+      <p class="page-date" id="currentDate">{{ today }}</p>
+    </div>
+    <!-- Score Ring -->
+    <div class="score-ring-wrap">
+      <div class="score-ring" id="scoreRing">
+        <svg class="ring-svg" viewBox="0 0 120 120">
+          <circle class="ring-bg"    cx="60" cy="60" r="50" />
+          <circle class="ring-fill"  cx="60" cy="60" r="50" id="ringFill"
+                  stroke-dasharray="314" stroke-dashoffset="314" />
+        </svg>
+        <div class="ring-text">
+          <span class="ring-score" id="ringScore">0</span>
+          <span class="ring-label">/ {{ total_points }}</span>
+        </div>
+      </div>
+      <div class="score-meta">
+        <div class="score-meta-item">
+          <span class="meta-val" id="metaTasks">0</span>
+          <span class="meta-key">Tasks Done</span>
+        </div>
+        <div class="score-meta-item">
+          <span class="meta-val" id="metaPct">0%</span>
+          <span class="meta-key">Completion</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Save bar ───────────────────────────────────────────── -->
+  <div class="save-bar">
+    <div class="save-bar-inner">
+      <p class="save-hint" id="saveHint">Check off your tasks and save your progress for today.</p>
+      <button class="btn-primary" id="saveBtn" onclick="saveProgress()">
+        <span>💾</span> Save Progress
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Toast ─────────────────────────────────────────────── -->
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <!-- ── Checklist Sections ─────────────────────────────────── -->
+  <form id="routineForm">
+    {% for cat in categories_order %}
+    {% set group = grouped_tasks[cat] %}
+    <section class="routine-section">
+      <div class="section-header">
+        <span class="section-icon">{{ group.icon }}</span>
+        <h2 class="section-title">{{ cat }}</h2>
+        <span class="section-count" id="count-{{ cat | lower }}">
+          0 / {{ group.tasks | length }}
+        </span>
+      </div>
+
+      <div class="task-list">
+        {% for task in group.tasks %}
+        <div class="task-item {% if task.id in completed_ids %}task-done{% endif %}" id="task-row-{{ task.id }}">
+          <label class="task-label" for="{{ task.id }}">
+            <input
+              type="checkbox"
+              id="{{ task.id }}"
+              name="tasks"
+              value="{{ task.id }}"
+              class="task-checkbox"
+              {% if task.id in completed_ids %}checked{% endif %}
+              onchange="onTaskChange(this)"
+            />
+            <span class="custom-checkbox"></span>
+            <span class="task-text">{{ task.label }}</span>
+          </label>
+          <span class="task-pts">+{{ task.points }} pts</span>
+        </div>
+
+        {% if task.id == 'daily_reflection' %}
+        <div class="reflection-box {% if 'daily_reflection' not in completed_ids %}hidden{% endif %}" id="reflection-box">
+          <textarea
+            id="reflection_text"
+            name="reflection"
+            class="reflection-textarea"
+            placeholder="Write your daily reflection here… What went well? What can you improve tomorrow?"
+            rows="3"
+          >{{ reflection_text }}</textarea>
+        </div>
+        {% endif %}
+
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </form>
+
+</div><!-- /page-wrapper -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  const TOTAL_POINTS = {{ total_points }};
+  const TASKS = {{ tasks | tojson }};
+
+  // ── On page load – update UI from checked state ───────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    formatDate();
+    updateScore();
+    updateCategoryCounts();
+  });
+
+  function formatDate() {
+    const el = document.getElementById('currentDate');
+    if (!el) return;
+    const d = new Date(el.textContent.trim() + 'T00:00:00');
+    el.textContent = d.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+
+  function onTaskChange(checkbox) {
+    const row = document.getElementById('task-row-' + checkbox.value);
+    if (checkbox.checked) row.classList.add('task-done');
+    else row.classList.remove('task-done');
+
+    // Handle reflection box
+    if (checkbox.value === 'daily_reflection') {
+      const box = document.getElementById('reflection-box');
+      if (box) box.classList.toggle('hidden', !checkbox.checked);
+    }
+
+    updateScore();
+    updateCategoryCounts();
+  }
+
+  function updateScore() {
+    const checked = [...document.querySelectorAll('.task-checkbox:checked')];
+    const score   = checked.reduce((sum, cb) => {
+      const task = TASKS.find(t => t.id === cb.value);
+      return sum + (task ? task.points : 0);
+    }, 0);
+    const pct = Math.round((score / TOTAL_POINTS) * 100);
+
+    document.getElementById('ringScore').textContent = score;
+    document.getElementById('metaTasks').textContent = checked.length;
+    document.getElementById('metaPct').textContent   = pct + '%';
+
+    // Animate ring
+    const circumference = 2 * Math.PI * 50; // 314.16
+    const offset = circumference - (pct / 100) * circumference;
+    document.getElementById('ringFill').style.strokeDashoffset = offset;
+
+    // Colour ring based on pct
+    const ring = document.getElementById('ringFill');
+    if (pct >= 80)      ring.style.stroke = '#22c55e';
+    else if (pct >= 60) ring.style.stroke = '#FF7A00';
+    else if (pct >= 40) ring.style.stroke = '#FFA94D';
+    else                ring.style.stroke = '#ef4444';
+  }
+
+  function updateCategoryCounts() {
+    // Group tasks by category
+    const catMap = {};
+    TASKS.forEach(t => {
+      if (!catMap[t.category]) catMap[t.category] = { total: 0, done: 0 };
+      catMap[t.category].total++;
+      if (document.getElementById(t.id)?.checked) catMap[t.category].done++;
+    });
+    Object.entries(catMap).forEach(([cat, data]) => {
+      const el = document.getElementById('count-' + cat.toLowerCase());
+      if (el) el.textContent = data.done + ' / ' + data.total;
+    });
+  }
+
+  async function saveProgress() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Saving…';
+
+    const checked   = [...document.querySelectorAll('.task-checkbox:checked')].map(cb => cb.value);
+    const reflection = document.getElementById('reflection_text')?.value || '';
+
+    try {
+      const res  = await fetch('/save_progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed_tasks: checked, reflection })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ Saved! Score: ${data.score}/${data.total} (${data.percentage}%)`, 'success');
+        document.getElementById('saveHint').textContent =
+          `Last saved: ${data.completed}/${data.total_tasks} tasks · ${data.score} pts · ${data.percentage}%`;
+      } else {
+        showToast('❌ Something went wrong. Please try again.', 'error');
+      }
+    } catch(e) {
+      showToast('❌ Network error. Please try again.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>💾</span> Save Progress';
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className   = 'toast toast-' + type + ' toast-show';
+    setTimeout(() => toast.classList.remove('toast-show'), 3500);
+  }
+</script>
+{% endblock %}

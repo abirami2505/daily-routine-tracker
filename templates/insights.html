@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Insights – {{ username }} Routine{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <section class="page-hero page-hero--sm">
+    <div class="hero-content">
+      <h1 class="page-title">Behavioral Insights</h1>
+      <p class="page-subtitle">AI-powered analysis of your routine patterns</p>
+    </div>
+  </section>
+
+  {% if not has_data %}
+  <section class="empty-state">
+    <div class="empty-icon">🧠</div>
+    <h2>No data yet</h2>
+    <p>Save at least one day of progress to unlock your behavioral insights.</p>
+    <a href="{{ url_for('dashboard') }}" class="btn-primary">Start Today</a>
+  </section>
+
+  {% else %}
+
+  <!-- ── Insight Banner ─────────────────────────────────────── -->
+  <section class="insight-banner insight-{{ insight_level }}">
+    <div class="insight-banner-inner">
+      <p class="insight-msg">{{ insight_message }}</p>
+    </div>
+  </section>
+
+  <!-- ── KPI Cards ─────────────────────────────────────────── -->
+  <section class="stats-row stats-row--4">
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-val">{{ avg_pct }}%</div>
+      <div class="stat-key">Avg Completion</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val">{{ total_days }}</div>
+      <div class="stat-key">Days Tracked</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-val">{{ streak }}</div>
+      <div class="stat-key">Current Streak</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏅</div>
+      <div class="stat-val">{{ max_score }} pts</div>
+      <div class="stat-key">Best Score</div>
+    </div>
+  </section>
+
+  <!-- ── Chart ─────────────────────────────────────────────── -->
+  <section class="chart-section">
+    <h2 class="section-title-sm">📈 Score Trend (Last {{ total_days }} Days)</h2>
+    <div class="chart-wrap">
+      <canvas id="trendChart" aria-label="Discipline score trend chart"></canvas>
+    </div>
+  </section>
+
+  <!-- ── Progress Gauge ────────────────────────────────────── -->
+  <section class="gauge-section">
+    <h2 class="section-title-sm">🎯 Average Discipline Level</h2>
+    <div class="gauge-wrap">
+      <div class="gauge-bar-bg">
+        <div class="gauge-bar-fill" id="gaugeBar" style="width: {{ avg_pct }}%"></div>
+        <span class="gauge-pct">{{ avg_pct }}%</span>
+      </div>
+      <div class="gauge-labels">
+        <span>0%</span>
+        <span>Needs Work</span>
+        <span>Average</span>
+        <span>Good</span>
+        <span>Excellent</span>
+        <span>100%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Tips ──────────────────────────────────────────────── -->
+  <section class="tips-section">
+    <h2 class="section-title-sm">💡 Personalized Tips</h2>
+    <div class="tips-grid">
+      {% if avg_pct < 40 %}
+      <div class="tip-card tip-red">
+        <div class="tip-icon">⏰</div>
+        <div class="tip-body">
+          <strong>Start with morning habits.</strong>
+          <p>Completing wake-up, hydration, and exercise sets a strong foundation for the rest of your day.</p>
+        </div>
+      </div>
+      <div class="tip-card tip-red">
+        <div class="tip-icon">🎯</div>
+        <div class="tip-body">
+          <strong>Set small daily targets.</strong>
+          <p>Aim to complete 5 tasks daily before trying to hit 100%. Gradual improvement is sustainable.</p>
+        </div>
+      </div>
+      {% elif avg_pct < 60 %}
+      <div class="tip-card tip-orange">
+        <div class="tip-icon">📖</div>
+        <div class="tip-body">
+          <strong>Skill up consistently.</strong>
+          <p>Aim to never skip SQL practice and DSA learning. These compound over months.</p>
+        </div>
+      </div>
+      <div class="tip-card tip-orange">
+        <div class="tip-icon">🌙</div>
+        <div class="tip-body">
+          <strong>Protect your night routine.</strong>
+          <p>LeetCode + DSA + Projects are your highest-value tasks. Guard that 7:45–11 PM window.</p>
+        </div>
+      </div>
+      {% elif avg_pct < 80 %}
+      <div class="tip-card tip-yellow">
+        <div class="tip-icon">🔁</div>
+        <div class="tip-body">
+          <strong>Build streaks.</strong>
+          <p>Consistency over perfection. Even 70% every day beats 100% once a week.</p>
+        </div>
+      </div>
+      <div class="tip-card tip-yellow">
+        <div class="tip-icon">✍️</div>
+        <div class="tip-body">
+          <strong>Reflect daily.</strong>
+          <p>Fill out the Daily Reflection box. It helps you identify patterns and course-correct faster.</p>
+        </div>
+      </div>
+      {% else %}
+      <div class="tip-card tip-green">
+        <div class="tip-icon">🏆</div>
+        <div class="tip-body">
+          <strong>Elite performance!</strong>
+          <p>You're in the top tier. Now focus on quality—are your project builds and DSA sessions deep work?</p>
+        </div>
+      </div>
+      <div class="tip-card tip-green">
+        <div class="tip-icon">🚀</div>
+        <div class="tip-body">
+          <strong>Challenge yourself.</strong>
+          <p>Consider adding harder LeetCode problems or additional projects to keep growing.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {% endif %}
+
+</div><!-- /page-wrapper -->
+{% endblock %}
+
+{% block extra_scripts %}
+{% if has_data %}
+<script>
+const chartData = {{ chart_data | tojson }};
+
+const ctx = document.getElementById('trendChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: chartData.dates.map(d => {
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    }),
+    datasets: [{
+      label: 'Completion %',
+      data:  chartData.scores,
+      borderColor:     '#FF7A00',
+      backgroundColor: 'rgba(255,122,0,0.10)',
+      pointBackgroundColor: '#FF7A00',
+      pointRadius: 5,
+      pointHoverRadius: 8,
+      tension: 0.3,
+      fill: true,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.parsed.y}% completion`
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        ticks: {
+          callback: v => v + '%',
+          color: '#666',
+        },
+        grid: { color: 'rgba(0,0,0,0.06)' }
+      },
+      x: {
+        ticks: { color: '#666' },
+        grid: { color: 'rgba(0,0,0,0.06)' }
+      }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}
