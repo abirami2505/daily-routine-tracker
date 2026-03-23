@@ -27,12 +27,8 @@ app.config['MYSQL_PASSWORD'] = ''   # ← put your password here
 ### 3. Install Dependencies
 
 ```bash
-pip install Flask flask-mysqldb
+pip install -r requirements.txt
 ```
-
-> **Windows note:** If `flask-mysqldb` fails to install, download the pre-built `mysqlclient` wheel from:
-> https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient
-> Then: `pip install mysqlclient‑<version>.whl`
 
 ### 4. Run the App
 
@@ -91,3 +87,9 @@ daily_routine_tracker/
 - **Text:** Dark Gray (#333333)
 - **Font:** Inter (Google Fonts)
 - **Layout:** Full-width, section-based (no cards on main pages)
+
+
+
+
+
+    
