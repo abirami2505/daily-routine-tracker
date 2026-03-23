@@ -15,7 +15,7 @@ app.secret_key = os.urandom(24)
 DB_CONFIG = {
     'host':     'localhost',
     'user':     'root',
-    'password': 'abiK@2505',   # ← Your MySQL password
+    'password': '',   # ← Your MySQL password
     'database': 'routine_tracker',
     'charset':  'utf8mb4',
     'autocommit': False,
