@@ -87,3 +87,9 @@ daily_routine_tracker/
 - **Text:** Dark Gray (#333333)
 - **Font:** Inter (Google Fonts)
 - **Layout:** Full-width, section-based (no cards on main pages)
+
+
+
+
+
+    
