@@ -15,10 +15,11 @@ app.secret_key = os.urandom(24)
 
 # ─── MySQL Configuration ───────────────────────────────────────────────────────
 DB_CONFIG = {
-    'host':     'localhost',
-    'user':     'root',
-    'password': 'abiK@2505',   # ← Your MySQL password
-    'database': 'routine_tracker',
+    'host':     os.getenv('DB_HOST', 'crossover.proxy.rlwy.net'),
+    'user':     os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASSWORD', 'eQZPyCodLWczbWwlczEfxfvNLxuUKbyD'),
+    'database': os.getenv('DB_NAME', 'railway'),
+    'port':     int(os.getenv('DB_PORT', 49592)),
     'charset':  'utf8mb4',
     'autocommit': False,
 }
@@ -64,12 +65,6 @@ def init_db():
         cfg = {k: v for k, v in DB_CONFIG.items() if k != 'database'}
         conn = mysql.connector.connect(**cfg)
         cur  = conn.cursor()
-
-        cur.execute(
-            "CREATE DATABASE IF NOT EXISTS `routine_tracker` "
-            "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
-        )
-        cur.execute("USE `routine_tracker`")
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -435,5 +430,4 @@ def _calculate_streak(logs):
 # ─── Start ────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    init_db()
     app.run(host='0.0.0.0', port=10000)
