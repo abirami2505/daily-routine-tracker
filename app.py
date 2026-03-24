@@ -7,15 +7,17 @@ import os
 import pandas as pd
 import joblib
 from datetime import date, timedelta
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = os.urandom(24)
 
 # ─── MySQL Configuration ───────────────────────────────────────────────────────
 DB_CONFIG = {
     'host':     'localhost',
     'user':     'root',
-    'password': '',   # ← Your MySQL password
+    'password': 'abiK@2505',   # ← Your MySQL password
     'database': 'routine_tracker',
     'charset':  'utf8mb4',
     'autocommit': False,
